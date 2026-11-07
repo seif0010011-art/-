@@ -21,6 +21,7 @@ let roomId = "local-test";
 let channelId = null;
 let remote = false; // يمنع حلقة الأحداث لما نطبّق أمر جاء من شخص ثاني
 let currentUrl = "";
+let proxyTok = ""; // توكن البروكسي من السيرفر
 let hls = null;
 
 // ================== شاشة الدخول (نار + صدمة) ==================
@@ -67,6 +68,9 @@ function toast(text) {
 function vibrate(p) { try { navigator.vibrate?.(p); } catch {} }
 
 $("enter").addEventListener("click", () => {
+  let savedVol = 100;
+  try { savedVol = Number(localStorage.getItem("vol")) || 100; } catch {}
+  setVolume(savedVol);
   const splash = $("splash");
   const flash = $("flash");
 
@@ -99,27 +103,10 @@ async function setupDiscord() {
     return;
   }
   sdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
+  roomId = sdk.instanceId;   // نضبطها فوراً حتى لو فشل تسجيل الدخول لاحقاً
+  channelId = sdk.channelId;
   await sdk.ready();
-
-  const { code } = await sdk.commands.authorize({
-    client_id: import.meta.env.VITE_DISCORD_CLIENT_ID,
-    response_type: "code",
-    state: "",
-    prompt: "none",
-    scope: ["identify", "rpc.activities.write"],
-  });
-
-  // داخل ديسكورد كل الطلبات تمر عبر /.proxy
-  const res = await fetch("/.proxy/api/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
-  });
-  const { access_token } = await res.json();
-  await sdk.commands.authenticate({ access_token });
-
-  roomId = sdk.instanceId; // كل من في نفس الـ Activity يتشارك نفس الروم
-  channelId = sdk.channelId; // الروم الصوتي (يستخدمه أمر /شغل)
+  // بدون تسجيل دخول: ما نحتاج حساب المستخدم، فما تطلع نافذة الموافقة أبداً
 }
 
 // ================== مشغّل الفيديو ==================
@@ -181,7 +168,7 @@ function setSource(url) {
     video.style.display = "block";
   }
 
-  const src = rewrite(url, inDiscord, roomId);
+  const src = rewrite(url, inDiscord, roomId, proxyTok);
   if (hls) { hls.destroy(); hls = null; }
   if (src.includes(".m3u8") || url.includes(".m3u8")) {
     if (Hls.isSupported()) {
@@ -204,7 +191,7 @@ function applyState(s) {
     if (Math.abs(ytTime - s.time) > 2) ytCmd("seekTo", [s.time, true]);
   } else {
     if (Math.abs(video.currentTime - s.time) > 1.5) video.currentTime = s.time;
-    if (s.playing && video.paused) video.play().catch(() => {});
+    if (s.playing && video.paused) video.play().catch(() => { setHint("loading", "👆 اضغط ▶️ في المشغّل للتشغيل"); });
     if (!s.playing && !video.paused) video.pause();
   }
   setTimeout(() => (remote = false), 600);
@@ -232,8 +219,14 @@ function connect() {
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     if (msg.type === "pong") return showPing(performance.now() - msg.t);
+    if (msg.type === "tok") { proxyTok = msg.tok; return; }
+    if (msg.type === "error") { statusEl.textContent = msg.text; setHint("err", "⚠️ " + msg.text); return toast("⚠️ " + msg.text); }
     if (msg.type === "state") {
-      if (msg.url && msg.url !== currentUrl) toast("🎬 " + (msg.title || "تم تشغيل فيديو جديد"));
+      if (msg.url && msg.url !== currentUrl) {
+        currentTitle = msg.title || "";
+        setHint("loading", "⏳ جاري التشغيل");
+        toast("🎬 " + (msg.title || "تم تشغيل فيديو جديد"));
+      }
       applyState(msg);
     }
   };
@@ -245,12 +238,70 @@ video.addEventListener("play", () => !remote && send({ type: "play", time: video
 video.addEventListener("pause", () => !remote && send({ type: "pause", time: video.currentTime }));
 video.addEventListener("seeked", () => !remote && send({ type: "seek", time: video.currentTime }));
 
-$("load").onclick = () => {
-  const url = $("url").value.trim();
-  if (!url) return toast("الصق رابط الفيديو أول");
-  setSource(url);
-  send({ type: "load", url });
-};
+video.addEventListener("error", async () => {
+  const src = video.currentSrc || video.src;
+  if (!src || src.endsWith("/")) return;
+  let info = "خطأ بالفيديو (code " + (video.error?.code ?? "?") + ")";
+  try {
+    const r = await fetch(src, { headers: { Range: "bytes=0-0" } });
+    info = "السيرفر رد " + r.status;
+    if (!r.ok) info += " | " + (await r.text()).slice(0, 150);
+    else info += " | " + (r.headers.get("content-type") || "");
+  } catch (e) {
+    info = "فشل الوصول للبروكسي: " + e.message;
+  }
+  statusEl.textContent = info;
+  setHint("err", "⚠️ ما اشتغل الفيديو، جرّب رابط ثاني");
+  toast(info);
+});
+
+
+
+// ================== نص الحالة (يتحرك ويتغير حسب التشغيل) ==================
+const hintEl = $("hint");
+const HINT_IDLE = hintEl.innerHTML;
+let currentTitle = "";
+function setHint(mode, text = "") {
+  hintEl.className = mode;
+  if (mode === "idle") { hintEl.innerHTML = HINT_IDLE; return; }
+  hintEl.textContent = text;
+  if (mode === "loading") {
+    const d = document.createElement("span");
+    d.className = "ld";
+    d.innerHTML = "<i>.</i><i>.</i><i>.</i>";
+    hintEl.append(d);
+  }
+}
+video.addEventListener("waiting", () => currentUrl && setHint("loading", "⏳ جاري التحميل"));
+video.addEventListener("playing", () => setHint("ok", "▶️ يشتغل الحين" + (currentTitle ? " · " + currentTitle : "")));
+
+// ================== الصوت (محلي لكل شخص، يوصل 200%) ==================
+let actx = null, gainNode = null;
+const volEl = $("vol");
+
+function setVolume(pct) {
+  pct = Math.max(0, Math.min(200, Math.round(Number(pct) || 0)));
+  volEl.value = pct;
+  $("vlabel").textContent = pct + "%";
+  try {
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      actx = new AC();
+      gainNode = actx.createGain();
+      actx.createMediaElementSource(video).connect(gainNode);
+      gainNode.connect(actx.destination);
+    }
+    if (actx.state === "suspended") actx.resume();
+    video.volume = 1;
+    gainNode.gain.value = pct / 100; // أكثر من 1 = تضخيم فوق الصوت الأصلي
+  } catch {
+    video.volume = Math.min(1, pct / 100); // احتياط بدون تضخيم
+  }
+  try { localStorage.setItem("vol", String(pct)); } catch {}
+}
+volEl.addEventListener("input", () => setVolume(volEl.value));
+$("vdn").onclick = () => setVolume(Number(volEl.value) - 10);
+$("vup").onclick = () => setVolume(Number(volEl.value) + 10);
 
 setupDiscord()
   .catch((e) => {
