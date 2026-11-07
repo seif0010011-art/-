@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Big Buck Bunny",
+    "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+  },
+  {
+    "title": "مسلسل تجريبي",
+    "episodes": [
+      { "name": "الحلقة 1", "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
+      { "name": "الحلقة 2", "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" },
+      { "name": "الحلقة 3", "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" }
+    ]
+  }
+]
