@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>HOSAM · شاهد مع أصحابك</title>
+    <style>
+      :root { --f1: #ff3d00; --f2: #ff9100; --f3: #ffd600; --bg: #070304; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: #fff; font-family: system-ui, "Segoe UI", Tahoma, sans-serif; overflow: hidden; }
+
+      /* ===== شاشة الدخول ===== */
+      #splash { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; overflow: hidden; background: #000; }
+      #bg { position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url("/hero.jpg") center/cover no-repeat; }
+      #bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 110%, rgba(255,61,0,.75), transparent 60%), linear-gradient(to top, rgba(7,3,4,.95), transparent 55%); }
+      #fire { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+      #content { position: relative; z-index: 2; width: 100%; height: 100%; text-align: center; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: max(22vh, 120px) 20px calc(env(safe-area-inset-bottom, 0px) + 26px); animation: rise 1.2s cubic-bezier(.2,.9,.2,1) both; }
+      .hero { --acc: #ff9100; --glow: rgba(255,145,0,.45); --edge: rgba(255,145,0,.75); display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
+      .foot { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+      .ldwrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+      .foot .credit { margin-top: 6px; }
+      /* الجملة المتغيّرة */
+      #tagcap { min-height: 58px; min-width: min(88vw, 340px); max-width: min(92vw, 420px); padding: 12px 22px; display: grid; place-items: center; border-radius: 18px; background: rgba(12,4,2,.62); border: 1.5px solid var(--edge); box-shadow: 0 0 26px var(--glow), inset 0 0 18px rgba(255,255,255,.04); transition: border-color .5s, box-shadow .5s; }
+      #tag { display: block; text-wrap: balance; font-weight: 900; font-size: clamp(17px, 5vw, 23px); line-height: 1.5; }
+      #tag .tt { background: linear-gradient(90deg, #fff 0%, #ffe7bf 45%, var(--acc) 130%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      #tag .te { font-size: 1.15em; }
+      .tdots { display: flex; gap: 7px; }
+      .tdots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.22); transition: transform .3s, background .3s; }
+      .tdots i.on { background: var(--acc); transform: scale(1.5); }
+      .pbar { width: min(220px, 60vw); height: 5px; border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; direction: ltr; transition: opacity .4s; }
+      .pbar i { display: block; height: 100%; width: 100%; transform-origin: left; border-radius: 9px; background: linear-gradient(90deg, var(--f1), var(--f3)); animation: fill 2.4s cubic-bezier(.3,.7,.2,1) forwards; }
+      @keyframes fill { from { transform: scaleX(.05); } to { transform: scaleX(1); } }
+      .loading.done ~ .pbar { opacity: 0; }
+      @keyframes rise { from { opacity: 0; transform: translateY(30px) scale(.92); } to { opacity: 1; transform: none; } }
+
+      .logo { position: relative; font-family: "Impact", "Arial Black", system-ui, sans-serif; font-weight: 900; font-size: clamp(48px, 16vw, 110px); letter-spacing: .06em; line-height: 1;
+        background: linear-gradient(to top, var(--f1), var(--f2) 55%, var(--f3)); -webkit-background-clip: text; background-clip: text; color: transparent;
+        filter: drop-shadow(0 0 22px rgba(255,90,0,.85)); direction: ltr; }
+      @keyframes flicker { 0%,100% { opacity: 1; } 8% { opacity: .85; } 10% { opacity: 1; } 52% { opacity: .92; } 54% { opacity: 1; } }
+
+
+      #enter { position: relative; margin-top: 10px; border: 0; cursor: pointer; padding: 16px 44px; border-radius: 999px; font: 900 20px system-ui, "Segoe UI", Tahoma, sans-serif; color: #1a0500;
+        background: linear-gradient(135deg, var(--f3), var(--f2) 45%, var(--f1)); box-shadow: 0 0 36px rgba(255,90,0,.8); transition: transform .15s; }
+      #enter::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 3px solid rgba(255,150,0,.85); animation: ring 1.6s ease-out infinite; pointer-events: none; }
+      @keyframes ring { from { transform: scale(1); opacity: .9; } to { transform: scale(1.35, 1.7); opacity: 0; } }
+      #enter:active { transform: scale(.94); }
+      .loading { display: flex; align-items: center; gap: 10px; min-height: 28px; font-weight: 800; color: #ffd9b8; }
+      .loading.done .dots { display: none; }
+      .dots i { display: inline-block; width: 8px; height: 8px; margin: 0 3px; border-radius: 50%; background: var(--f2); animation: dot 1.2s infinite; }
+      .dots i:nth-child(2) { animation-delay: .2s; }
+      .dots i:nth-child(3) { animation-delay: .4s; }
+      @keyframes dot { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1.25); } }
+      .ver { font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: .15em; color: #9a7a66; direction: ltr; }
+      #enter { opacity: 0; transform: translateY(8px); pointer-events: none; }
+      #enter.ready { opacity: 1; transform: none; pointer-events: auto; transition: opacity .5s, transform .5s; }
+
+      .credit { margin-top: 26px; font-family: "Impact", "Arial Black", system-ui, sans-serif; font-size: 12px; letter-spacing: .25em; color: #ffb27a; opacity: .9; direction: ltr; text-transform: uppercase; }
+      .credit b { color: #fff; text-shadow: 0 0 10px var(--f2), 0 0 24px var(--f1); }
+
+      /* ===== حركات الصدمة ===== */
+      #flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; }
+      .shake { animation: shake .7s cubic-bezier(.36,.07,.19,.97) both; }
+      @keyframes shake { 10%,90% { transform: translate(-3px,1px); } 20%,80% { transform: translate(6px,-3px) rotate(.4deg); } 30%,50%,70% { transform: translate(-12px,4px) rotate(-.8deg); } 40%,60% { transform: translate(12px,-4px) rotate(.8deg); } }
+      #splash.boom #content { animation: zoomout .9s ease-in forwards; }
+      @keyframes zoomout { to { transform: scale(2.2); opacity: 0; } }
+      #splash.gone { animation: burn 1s ease-in forwards; pointer-events: none; }
+      @keyframes burn { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+      /* ===== المشغّل ===== */
+      #app { position: fixed; inset: 0; display: flex; flex-direction: column; opacity: 0; transform: scale(.96); transition: opacity .8s .3s, transform .8s .3s; }
+      #app.show { opacity: 1; transform: none; }
+      #bar { display: flex; gap: 8px; padding: 10px; background: linear-gradient(to bottom, #1a0803, #0e0504); border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, var(--f1), var(--f3), var(--f1)) 1; }
+      #bar input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid #5a2410; background: #0b0403; color: #fff; font: 600 14px system-ui, "Segoe UI", Tahoma, sans-serif; outline: none; }
+      #bar input:focus { border-color: var(--f2); box-shadow: 0 0 14px rgba(255,120,0,.5); }
+      #bar button { padding: 0 20px; border: 0; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, var(--f2), var(--f1)); color: #fff; font: 900 15px system-ui, "Segoe UI", Tahoma, sans-serif; box-shadow: 0 0 16px rgba(255,80,0,.6); }
+      #bar { flex-wrap: wrap; align-items: center; justify-content: space-between; }
+      #hint { flex: 1 1 220px; font-weight: 800; font-size: 14px; color: #ffd9b8; }
+      #hint.idle .shim { background: linear-gradient(90deg, #ffd9b8 0%, #fff 22%, #ff9100 45%, #ff3d00 60%, #ffd9b8 100%); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 3.2s linear infinite; }
+      #hint .pin { display: inline-block; animation: bob 1.4s ease-in-out infinite; }
+      #hint.loading { color: #ffd600; text-shadow: 0 0 12px rgba(255,150,0,.9); }
+      #hint.ok { color: #4ade80; }
+      #hint.err { color: #f87171; }
+      .ld i { font-style: normal; animation: blink 1.2s infinite; }
+      .ld i:nth-child(2) { animation-delay: .2s; }
+      .ld i:nth-child(3) { animation-delay: .4s; }
+      @keyframes shimmer { from { background-position: 0% 0; } to { background-position: -300% 0; } }
+      @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(12deg); } }
+      @keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+      #hint code { direction: ltr; unicode-bidi: isolate; padding: 2px 8px; border-radius: 8px; background: #2a1007; border: 1px solid #5a2410; color: #ffb27a; }
+      /* ===== منطقة المشغّل ===== */
+      #stage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #000; touch-action: none; user-select: none; -webkit-user-select: none; }
+      #stage video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; background: #000; transform-origin: 50% 50%; will-change: transform; }
+      #ytbox { display: none; position: absolute; inset: 0; background: #000; }
+      #yt { width: 100%; height: 100%; border: 0; }
+      #app.immersive #bar, #app.immersive #status { display: none; }
+      #app.clean #bar, #app.clean #status { display: none; } /* وقت التشغيل: بدون نصوص */
+
+      /* ===== شاشة التحميل المتحركة ===== */
+      #loader { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; overflow: hidden; background: radial-gradient(ellipse at 50% 100%, rgba(255,61,0,.45), rgba(0,0,0,.94) 70%); opacity: 0; visibility: hidden; transition: opacity .35s, visibility .35s; pointer-events: none; }
+      #loader.on { opacity: 1; visibility: visible; }
+      #loader.buffer { background: rgba(0,0,0,.4); }
+      #loader.buffer .ltitle, #loader.buffer .lbar, #loader.buffer .ember { display: none; }
+      .ldbox { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 20px; }
+      .ring { position: relative; width: 92px; height: 92px; display: grid; place-items: center; font-size: 38px; }
+      .ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 5px solid rgba(255,140,0,.2); border-top-color: var(--f2); border-right-color: var(--f1); animation: spin 1s linear infinite; }
+      .ring span { animation: throb 1s ease-in-out infinite; }
+      .lt { font-weight: 900; font-size: 20px; color: #ffd9b8; text-shadow: 0 0 14px rgba(255,90,0,.8); }
+      .ltitle { max-width: 80vw; font-size: 13px; font-weight: 700; color: #ffb27a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .lbar { width: 190px; height: 5px; border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; direction: ltr; }
+      .lbar i { display: block; width: 45%; height: 100%; border-radius: 9px; background: linear-gradient(90deg, var(--f1), var(--f3)); animation: slide 1.3s ease-in-out infinite; }
+      .ember { position: absolute; bottom: -10px; width: 7px; height: 7px; border-radius: 50%; background: var(--f2); box-shadow: 0 0 10px var(--f1); opacity: 0; animation: up 2.4s ease-in infinite; }
+      .e1 { left: 12%; } .e2 { left: 30%; animation-delay: .6s; } .e3 { left: 50%; animation-delay: 1.2s; } .e4 { left: 68%; animation-delay: .3s; } .e5 { left: 86%; animation-delay: .9s; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes throb { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+      @keyframes slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+      @keyframes up { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-70vh); opacity: 0; } }
+
+
+
+      /* ===== مربع الروم الصوتي (صغير): بس "اضغط للمشاهدة" ===== */
+      #tile { display: none; position: fixed; inset: 0; z-index: 100; flex-direction: column; align-items: center; justify-content: center; gap: 12px; overflow: hidden; background: radial-gradient(circle at 50% 62%, #4a1400, #0f0300 72%); }
+      body.tile #tile { display: flex; }
+      body.tile #splash, body.tile #app, body.tile #flash, body.tile #toast { display: none !important; }
+      #tile .tplay { width: min(34vmin, 72px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #ff5a00, #ffb300); box-shadow: 0 0 26px rgba(255,110,0,.7); animation: tpulse 1.6s ease-in-out infinite; }
+      #tile .tplay svg { width: 46%; height: 46%; fill: #fff; margin-left: 6%; }
+      #tile .ttxt { font: 900 clamp(13px, 9vmin, 24px)/1.2 system-ui, Tahoma, sans-serif; color: #fff; text-shadow: 0 0 14px rgba(255,120,0,.9); }
+      @keyframes tpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+      #app.rotated #bar, #app.rotated #status { display: none; }
+
+      /* ===== صف الأزرار الثاني + الترجمة ===== */
+      .btnrow2 { justify-content: center; gap: 14px; margin-bottom: 8px; }
+      .tbtn { width: auto; min-width: 54px; padding: 0 12px; font: 900 14px ui-monospace, Menlo, monospace; }
+      .tbtn svg { width: 24px; height: 24px; }
+      #ccwrap { position: relative; }
+      #cpop { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translate(-50%, 8px); min-width: 150px; max-height: 50vh; overflow-y: auto; padding: 6px; border-radius: 16px; background: rgba(24,8,3,.95); border: 1px solid rgba(255,120,0,.55); box-shadow: 0 0 20px rgba(255,80,0,.4); display: flex; flex-direction: column; gap: 4px; opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; z-index: 7; }
+      #cpop.on { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+      #cpop .qopt { direction: rtl; }
+      #bcc.off { opacity: .45; }
+      #bcc.on { border-color: var(--f3); box-shadow: 0 0 12px rgba(255,150,0,.6); }
+      #subs { position: absolute; left: 0; right: 0; bottom: 14px; z-index: 3; text-align: center; padding: 0 12px; pointer-events: none; transition: bottom .25s; }
+      #controls.show ~ #subs { bottom: 150px; }
+      #subs span { display: inline-block; max-width: 92%; padding: 3px 10px; border-radius: 8px; background: rgba(0,0,0,.62); color: #fff; font: 700 clamp(15px, 4.2vw, 24px)/1.5 system-ui, "Segoe UI", Tahoma, sans-serif; text-shadow: 0 1px 3px #000; white-space: pre-line; unicode-bidi: plaintext; }
+      #skipfx { position: absolute; top: 50%; z-index: 6; transform: translateY(-50%) scale(.8); padding: 14px 20px; border-radius: 40px; background: rgba(24,8,3,.75); border: 1px solid rgba(255,120,0,.6); color: #fff; font: 900 18px ui-monospace, Menlo, monospace; opacity: 0; pointer-events: none; }
+      #skipfx.go { animation: skp .6s ease-out; }
+      @keyframes skp { 0% { opacity: 0; transform: translateY(-50%) scale(.8); } 25% { opacity: 1; transform: translateY(-50%) scale(1); } 100% { opacity: 0; transform: translateY(-50%) scale(1.05); } }
+
+      /* ===== أزرار التحكم ===== */
+      #controls { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 30px 10px 10px; direction: ltr; background: linear-gradient(transparent, rgba(0,0,0,.88)); opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none; }
+      #controls.show { opacity: 1; transform: none; pointer-events: auto; }
+      .seekrow { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font: 700 12px ui-monospace, Menlo, monospace; color: #ffd9b8; }
+      #seek { position: relative; flex: 1; height: 26px; display: flex; align-items: center; touch-action: none; }
+      #seek::before { content: ""; position: absolute; left: 0; right: 0; height: 5px; border-radius: 9px; background: rgba(255,255,255,.2); }
+      #seekfill { position: relative; display: block; height: 5px; width: 0; border-radius: 9px; background: linear-gradient(90deg, var(--f1), var(--f3)); }
+      #seekfill::after { content: ""; position: absolute; right: -7px; top: -5px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px var(--f2); }
+      .btnrow { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+      .cbtn { width: 42px; height: 42px; padding: 0; border-radius: 12px; border: 1px solid rgba(255,120,0,.5); background: rgba(24,8,3,.78); color: #fff; display: grid; place-items: center; cursor: pointer; }
+      .cbtn:active { transform: scale(.92); }
+      .cbtn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      #vwrap { position: relative; }
+      #vpop { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translate(-50%, 8px); width: 54px; padding: 10px 0 12px; border-radius: 16px; background: rgba(24,8,3,.94); border: 1px solid rgba(255,120,0,.55); box-shadow: 0 0 20px rgba(255,80,0,.4); display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; touch-action: none; }
+      #vpop.on { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+      #vpct { font: 800 12px ui-monospace, Menlo, monospace; color: #ffb27a; }
+      #vtrack { position: relative; width: 34px; height: 150px; touch-action: none; }
+      #vtrack::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 8px; margin-left: -4px; border-radius: 9px; background: rgba(255,255,255,.18); }
+      #vfill { position: absolute; left: 50%; bottom: 0; width: 8px; height: 50%; margin-left: -4px; border-radius: 9px; background: linear-gradient(to top, var(--f1), var(--f3)); }
+      #vthumb { position: absolute; left: 50%; bottom: calc(50% - 9px); width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px var(--f2); }
+      #vtick { position: absolute; left: 50%; bottom: 50%; width: 18px; height: 2px; margin-left: -9px; background: rgba(255,255,255,.55); }
+      #qwrap { position: relative; display: none; }
+      #qwrap.on { display: block; }
+      #bqual { font: 900 12px system-ui, "Segoe UI", sans-serif; letter-spacing: -.2px; }
+      #qpop { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translate(-50%, 8px); min-width: 130px; max-height: 60vh; overflow-y: auto; padding: 6px; border-radius: 16px; background: rgba(24,8,3,.95); border: 1px solid rgba(255,120,0,.55); box-shadow: 0 0 20px rgba(255,80,0,.4); display: flex; flex-direction: column; gap: 4px; opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; }
+      #qpop.on { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+      .qopt { border: 0; background: transparent; color: #fff; font: 800 15px system-ui, "Segoe UI", sans-serif; padding: 11px 16px; border-radius: 10px; cursor: pointer; text-align: center; direction: ltr; }
+      .qopt.on { background: linear-gradient(135deg, var(--f2), var(--f1)); color: #1a0500; }
+      #status { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; font-size: 12px; color: #ffb27a; background: #0e0504; }
+      #status .by { font-family: "Impact", "Arial Black", system-ui, sans-serif; letter-spacing: .15em; font-size: 10px; direction: ltr; }
+      #status .by b { color: #fff; }
+      .ping { font-family: ui-monospace, Menlo, monospace; font-weight: 800; direction: ltr; padding: 2px 10px; border-radius: 999px; background: #1d0d06; color: #4ade80; border: 1px solid #3a1a0c; transition: color .3s; }
+      .ping.mid { color: #facc15; }
+      .ping.bad { color: #f87171; }
+      #toast { position: fixed; top: 70px; left: 50%; transform: translate(-50%, -20px); z-index: 20; padding: 10px 18px; border-radius: 999px; background: linear-gradient(135deg, var(--f1), #b30000); font-weight: 800; opacity: 0; transition: .35s; pointer-events: none; box-shadow: 0 0 24px rgba(255,60,0,.8); }
+      #toast.on { opacity: 1; transform: translate(-50%, 0); }
+    </style>
+  </head>
+  <body>
+    <div id="splash">
+      <div id="bg"></div>
+      <canvas id="fire"></canvas>
+      <div id="content">
+        <div class="hero" id="hero">
+          <div class="logo" data-text="HOSAM">HOSAM</div>
+          <div id="tagcap"><span id="tag"></span></div>
+          <div class="tdots" id="tdots"></div>
+        </div>
+        <div class="foot">
+          <div class="ldwrap">
+            <div class="loading" id="loading"><span class="dots"><i></i><i></i><i></i></span><span id="stagetxt">جاري التهيئة…</span></div>
+            <div class="pbar"><i></i></div>
+            <div class="ver" id="ver">V1.0.0 · Booting…</div>
+          </div>
+          <button id="enter" disabled>ادخل النار 🔥</button>
+          <div class="credit">Developed by <b>Hosam</b></div>
+        </div>
+      </div>
+    </div>
+    <div id="tile"><div class="tplay"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><div class="ttxt">اضغط للمشاهدة</div></div>
+    <div id="flash"></div>
+    <div id="toast"></div>
+
+    <div id="app">
+      <div id="bar">
+        <div id="hint" class="idle"><span class="pin">📎</span> <span class="shim">الصق الرابط في الشات: <code>.شغل</code> + الرابط</span></div>
+      </div>
+      <div id="stage">
+        <video id="video" playsinline></video>
+        <div id="ytbox"><iframe id="yt" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>
+        <div id="loader">
+          <i class="ember e1"></i><i class="ember e2"></i><i class="ember e3"></i><i class="ember e4"></i><i class="ember e5"></i>
+          <div class="ldbox">
+            <div class="ring"><span>🔥</span></div>
+            <div class="lt"><span id="ltext">جاري تشغيل الفيديو</span><span class="ld"><i>.</i><i>.</i><i>.</i></span></div>
+            <div class="ltitle" id="ltitle"></div>
+            <div class="lbar"><i></i></div>
+          </div>
+        </div>
+        <div id="controls" class="ctl">
+          <div class="seekrow"><span id="tcur">0:00</span><div id="seek"><i id="seekfill"></i></div><span id="tdur">0:00</span></div>
+          <div class="btnrow btnrow2">
+            <button class="cbtn tbtn" id="bspd" aria-label="السرعة">1x</button>
+            <div id="ccwrap"><div id="cpop"></div><button class="cbtn tbtn" id="bcc" aria-label="الترجمة">CC</button></div>
+          </div>
+          <div class="btnrow">
+            <button class="cbtn" id="bplay" aria-label="تشغيل / إيقاف"></button>
+            <div id="vwrap">
+              <div id="vpop"><div id="vpct">100%</div><div id="vtrack"><i id="vfill"></i><u id="vtick"></u><b id="vthumb"></b></div></div>
+              <button class="cbtn" id="bvol" aria-label="الصوت"></button>
+            </div>
+            <div id="qwrap">
+              <div id="qpop"></div>
+              <button class="cbtn" id="bqual" aria-label="الجودة">HD</button>
+            </div>
+            <button class="cbtn" id="brot" aria-label="تدوير"></button>
+            <button class="cbtn" id="bfs" aria-label="ملء الشاشة"></button>
+          </div>
+        </div>
+        <div id="subs"></div>
+        <div id="skipfx"></div>
+      </div>
+      <div id="status"><span id="statusText">جاري الاتصال...</span><span id="ping" class="ping">-- ms</span><span class="by">Developed by <b>Hosam</b></span></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
